@@ -1,1 +1,74 @@
-#Add RMD Code here, to edit: "Edit this file (pencil icon)" -> "Commit changes..."
+---
+title: "Final Project"
+author: "Group 12"
+date: "November 12th, 2024"
+output: pdf_document
+---
+List your group members, including their student numbers, here:
+
+- 
+- 
+- Luka Zubac (169099010)
+- Nav (210559830)
+- 
+
+## load data and libraries
+
+```{r}
+library(tidyverse)
+library(ggrepel)
+theme_set(theme_bw())
+library(arrow)
+library(tidymodels)
+tidymodels_prefer()
+```
+
+```{r}
+unzip("archive.zip", exdir = "extracted_files")
+list.files("extracted_files")
+appliances_data <- read_csv("extracted_files/us-shein-appliances-3987.csv")
+view(appliances_data)
+```
+
+## Introduction and goals
+This analysis focuses on understanding the relationship between an item’s discount percentage and its ranking on the Shein Appliances best
+sellers list. Discounts are known to be a big factor in consumers' choices but this analysis aims to see just how much it affects the sales of
+an item and whether a higher discount leads to a better rank (a lower rank number) on the best-sellers list. The insights gained could help
+optimize pricing strategies to boost sales performance. To perform this analysis, the first step is cleaning the dataset to ensure that it is
+suitable for analysis and visualization. This involves handling missing data, removing irrelevant columns, and formatting key variables into
+numeric formats for proper computation. Once the data is cleaned, the next steps include calculating correlations between discounts and
+rankings, and visualizing the relationship through scatter plots and other plots. This process will allow us to identify trends and assess
+whether larger discounts correlate with better rankings.
+
+## Data Cleaning
+
+```{r cars}
+cleaned_appliances <- appliances_data |>
+  filter(!is.na(`goods-title-link--jump`)) |>
+  select(-`selling_proposition`, -`goods-title-link`) |>
+  filter(!is.na(`rank-title`) & !is.na(discount)) |>
+  mutate(rank = as.numeric(gsub("#| Best.*", "", `rank-title`))) |>
+  mutate(discount = as.numeric(gsub("-|%", "", discount))) |>
+  mutate(price = as.numeric(gsub("\\$", "", price)))
+
+view(cleaned_appliances)
+cleaned_appliances
+```
+
+## The Shein Appliances dataset was cleaned to ensure it was suitable for analysis and visualizations. Rows with missing values in the ‘goods
+title link–jump’, ‘rank-title’, and ‘discount’ columns were removed using the ‘filter()’ function because these fields are critical for exploring
+relationships between discounts and item rankings, and missing data would skew the results. Columns like ‘selling proposition’ and ‘goods-title
+link’, which contained only NA values, were removed with the ‘select(-any_of(...))’ function to streamline the dataset and avoid unnecessary
+clutter. Text-based columns, such as ‘rank-title’, ‘discount’, and ‘price’, were cleaned using ‘mutate()’ and ‘gsub()’ to extract numeric
+values, allowing us to plot the data easier and cleaner. These steps ensure the dataset is formatted for meaningful analysis, such as
+calculating correlations or creating plots, without errors caused by non-numeric characters.
+
+
+
+
+
+
+
+
+
+
