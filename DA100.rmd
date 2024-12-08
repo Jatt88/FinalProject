@@ -54,8 +54,7 @@ cleaned_appliances <- appliances_data |>
 view(cleaned_appliances)
 cleaned_appliances
 ```
-
-## The Shein Appliances dataset was cleaned to ensure it was suitable for analysis and visualizations. Rows with missing values in the ‘goods
+The Shein Appliances dataset was cleaned to ensure it was suitable for analysis and visualizations. Rows with missing values in the ‘goods
 title link–jump’, ‘rank-title’, and ‘discount’ columns were removed using the ‘filter()’ function because these fields are critical for exploring
 relationships between discounts and item rankings, and missing data would skew the results. Columns like ‘selling proposition’ and ‘goods-title
 link’, which contained only NA values, were removed with the ‘select(-any_of(...))’ function to streamline the dataset and avoid unnecessary
