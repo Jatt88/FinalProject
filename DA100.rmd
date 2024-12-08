@@ -51,7 +51,6 @@ cleaned_appliances <- appliances_data |>
   mutate(discount = as.numeric(gsub("-|%", "", discount))) |>
   mutate(price = as.numeric(gsub("\\$", "", price)))
 
-view(cleaned_appliances)
 cleaned_appliances
 ```
 The Shein Appliances dataset was cleaned to ensure it was suitable for analysis and visualizations. Rows with missing values in the ‘goods
