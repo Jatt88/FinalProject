@@ -61,9 +61,135 @@ clutter. Text-based columns, such as ‘rank-title’, ‘discount’, and ‘pr
 values, allowing us to plot the data easier and cleaner. These steps ensure the dataset is formatted for meaningful analysis, such as
 calculating correlations or creating plots, without errors caused by non-numeric characters.
 
+## Exploratory Plot 1
+
+```{r}
+
+# Scatter plot of price vs discount
+ggplot(cleaned_appliances, aes(x = price, y = discount)) +
+  geom_point(alpha = 0.5, color = "blue") +
+  geom_smooth(method = "lm", color = "red", se = FALSE) +
+  labs(
+    title = "Relationship Between Price and Discount",
+    x = "Price (USD)",
+    y = "Discount (%)"
+  )
+
+```
+
+## Discussion for Plot 1
+
+The scatter plot reveals that as the price increases, discounts tend to vary without a clear linear relationship. However, the fitted linear trendline suggests a slight negative correlation. This could imply that higher-priced items might receive smaller discounts, potentially relevant for setting discount strategies in higher-priced segments.
+
+## Exploratory Plot 2
+
+```{r}
+# Boxplot of Discount by Category
+ggplot(cleaned_appliances, aes(x = category, y = discount)) +
+  geom_boxplot(fill = "lightblue", color = "darkblue", outlier.color = "red", outlier.shape = 16) +
+  labs(
+    title = "Distribution of Discounts by Category",
+    x = "Category",
+    y = "Discount (%)"
+  ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+## Discussion for Plot 2
+
+The boxplot highlights how discounts vary across different product categories. Categories with wider interquartile ranges or extreme
+outliers could be investigated further to understand pricing strategies. This analysis directly informs feature selection and category-specific strategies for modeling the relationship between features.
+
+## Model Plot 1 and 2
+
+```{r}
+
+set.seed(123)
+df <- tibble(
+split = c("train", "train", "test", "train", "test"),
+category = c("A", "B", "A", "C", "B"),
+price = c(10, 20, 15, 25, 30),
+sales = c(100, 150, 120, 130, 140),
+discount = c(0.1, 0.2, 0.15, 0.3, 0.25),
+rank = c(3, 1, 2, 4, 5)  )
+train_data <- df %>% filter(split == "train")
+
+# Model Plot 1: Relationship between rank,prices and sales
+
+plot1 <- ggplot(train_data, aes(x = price, y = sales, color = rank)) + 
+geom_point(alpha = 0.6) + 
+theme_minimal() + 
+labs(title = "Model Plot 1: Rank vs Price and Sales", x = "Price", y = "Sales", color = "Rank") +
+scale_color_gradient(low = "blue", high = "red")  
+
+plot1
+
+# Model Plot 2: relationship between rank,discount and category
+
+plot2 <- ggplot(train_data, aes(x = discount, y = rank, fill = category)) + 
+geom_bar(stat = "identity", position = "dodge", alpha = 0.6) + 
+theme_minimal() + 
+labs(title = "Model Plot 2: Rank vs Discount and Category", x = "Discount", y = "Rank", fill = "Category")
+
+plot2
 
 
+```
 
+## Exploratory Linear Model 1
+
+```{r}
+
+# Exploratory Linear Model 1: Interaction of price & discount
+model_1 <- lm(rank ~ price * discount, data = cleaned_appliances)
+
+summary(model_1)
+# plot(model_1)
+
+# Validation Data & RMSE calculation
+
+validation_data <- df|>
+  filter(split == "test")
+
+predictions <- predict(model_1, newdata = validation_data)
+rmse1 <- sqrt(mean((predictions - validation_data$rank)^2))
+
+rmse1
+```
+
+## Reasoning for Exploratory Model 1
+
+In earlier plots the relationship between price and discounts can be seen. With the first exploratory linear model, we expand on the
+relationship between price and discounts, and how it can impact a product's rank. These were some of the key findings: the model achieved an RMSE value of 7.78, the coefficients for price & discount were not statistically significant as p \> 0.05, residuals showed variability, and the adjusted r-squared value was negative. These results suggest the interaction model may be bit more complex for the data set, as the results don't improve prediction accuracy.
+
+## Exploratory Linear Model 2
+
+```{r}
+
+# Exploratory Linear Model 2: Additive Model, Price + Discount 
+
+model_2 <- lm(rank ~ price + discount, data = cleaned_appliances)
+
+
+summary(model_2)
+# plot(model_2)
+
+# Validation Data & RMSE calculation
+
+validation_data <- df|>
+  filter(split == "test")
+
+predictions_2 <- predict(model_2, newdata = validation_data)
+rmse2 <- sqrt(mean((predictions_2 - validation_data$rank)^2))
+
+rmse2
+```
+
+## Reasoning for Exploratory Linear Model 2
+
+The second exploratory linear model brings in a simpler additive approach, taking a closer look at the independent effects of price and
+discount on product rank. This model achieves an RMSE value of 2.67 which outperforms the interaction model. While the coefficients for both predictors are not statistically significant (p \> 0.05), the model supports predictive accuracy within the data set and suggests less variability. The results also suggest that neither price nor discount strongly predict ranking within the data set, including additional predictors within the final linear model can improve its explanatory power and statistical significance.
 
 
 
