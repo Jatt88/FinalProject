@@ -10,7 +10,7 @@ List your group members, including their student numbers, here:
 - 
 - Luka Zubac (169099010)
 - Nav (210559830)
-- 
+- Max Boudreau (169089815)
 
 ## load data and libraries
 
