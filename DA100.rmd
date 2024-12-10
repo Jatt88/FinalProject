@@ -3,14 +3,18 @@ title: "Final Project"
 author: "Group 12"
 date: "December 8th, 2024"
 output: pdf_document
+editor_options: 
+  markdown: 
+    wrap: 72
 ---
+
 List your group members, including their student numbers, here:
 
-- 
-- 
-- Luka Zubac (169099010)
-- Nav (210559830)
-- Max Boudreau (169089815)
+-   Tadiwa Mabukwa (169073550)
+-   Helen Zhang (169062556)
+-   Luka Zubac (169099010)
+-   Nav Bhatia (210559830)
+-   Max Boudreau (169089815)
 
 ## load data and libraries
 
@@ -21,6 +25,7 @@ theme_set(theme_bw())
 library(arrow)
 library(tidymodels)
 tidymodels_prefer()
+library(ggplot2)
 ```
 
 ```{r}
@@ -31,18 +36,26 @@ view(appliances_data)
 ```
 
 ## Introduction and goals
-This analysis focuses on understanding the relationship between an item’s discount percentage and its ranking on the Shein Appliances best
-sellers list. Discounts are known to be a big factor in consumers' choices but this analysis aims to see just how much it affects the sales of
-an item and whether a higher discount leads to a better rank (a lower rank number) on the best-sellers list. The insights gained could help
-optimize pricing strategies to boost sales performance. To perform this analysis, the first step is cleaning the dataset to ensure that it is
-suitable for analysis and visualization. This involves handling missing data, removing irrelevant columns, and formatting key variables into
-numeric formats for proper computation. Once the data is cleaned, the next steps include calculating correlations between discounts and
-rankings, and visualizing the relationship through scatter plots and other plots. This process will allow us to identify trends and assess
+
+This analysis focuses on understanding the relationship between an
+item’s discount percentage and its ranking on the Shein Appliances best
+sellers list. Discounts are known to be a big factor in consumers'
+choices but this analysis aims to see just how much it affects the sales
+of an item and whether a higher discount leads to a better rank (a lower
+rank number) on the best-sellers list. The insights gained could help
+optimize pricing strategies to boost sales performance. To perform this
+analysis, the first step is cleaning the dataset to ensure that it is
+suitable for analysis and visualization. This involves handling missing
+data, removing irrelevant columns, and formatting key variables into
+numeric formats for proper computation. Once the data is cleaned, the
+next steps include calculating correlations between discounts and
+rankings, and visualizing the relationship through scatter plots and
+other plots. This process will allow us to identify trends and assess
 whether larger discounts correlate with better rankings.
 
 ## Data Cleaning
 
-```{r cars}
+```{r}
 cleaned_appliances <- appliances_data |>
   filter(!is.na(`goods-title-link--jump`)) |>
   select(-`selling_proposition`, -`goods-title-link`) |>
@@ -53,13 +66,23 @@ cleaned_appliances <- appliances_data |>
 
 cleaned_appliances
 ```
-The Shein Appliances dataset was cleaned to ensure it was suitable for analysis and visualizations. Rows with missing values in the ‘goods
-title link–jump’, ‘rank-title’, and ‘discount’ columns were removed using the ‘filter()’ function because these fields are critical for exploring
-relationships between discounts and item rankings, and missing data would skew the results. Columns like ‘selling proposition’ and ‘goods-title
-link’, which contained only NA values, were removed with the ‘select(-any_of(...))’ function to streamline the dataset and avoid unnecessary
-clutter. Text-based columns, such as ‘rank-title’, ‘discount’, and ‘price’, were cleaned using ‘mutate()’ and ‘gsub()’ to extract numeric
-values, allowing us to plot the data easier and cleaner. These steps ensure the dataset is formatted for meaningful analysis, such as
-calculating correlations or creating plots, without errors caused by non-numeric characters.
+
+## Data Cleaning Explanation
+
+The Shein Appliances dataset was cleaned to ensure it was suitable for
+analysis and visualizations. Rows with missing values in the ‘goods
+title link–jump’, ‘rank-title’, and ‘discount’ columns were removed
+using the ‘filter()’ function because these fields are critical for
+exploring relationships between discounts and item rankings, and missing
+data would skew the results. Columns like ‘selling proposition’ and
+‘goods-title link’, which contained only NA values, were removed with
+the ‘select(-any_of(...))’ function to streamline the dataset and avoid
+unnecessary clutter. Text-based columns, such as ‘rank-title’,
+‘discount’, and ‘price’, were cleaned using ‘mutate()’ and ‘gsub()’ to
+extract numeric values, allowing us to plot the data easier and cleaner.
+These steps ensure the dataset is formatted for meaningful analysis,
+such as calculating correlations or creating plots, without errors
+caused by non-numeric characters.
 
 ## Exploratory Plot 1
 
@@ -79,63 +102,79 @@ ggplot(cleaned_appliances, aes(x = price, y = discount)) +
 
 ## Discussion for Plot 1
 
-The scatter plot reveals that as the price increases, discounts tend to vary without a clear linear relationship. However, the fitted linear trendline suggests a slight negative correlation. This could imply that higher-priced items might receive smaller discounts, potentially relevant for setting discount strategies in higher-priced segments.
+The scatter plot reveals that as the price increases, discounts tend to
+vary without a clear linear relationship. However, the fitted linear
+trendline suggests a slight negative correlation. This could imply that
+higher-priced items might receive smaller discounts, potentially
+relevant for setting discount strategies in higher-priced segments.
 
 ## Exploratory Plot 2
+```{r}
+colnames(cleaned_appliances)
+head(cleaned_appliances)
+```
 
 ```{r}
 # Boxplot of Discount by Category
 ggplot(cleaned_appliances, aes(x = category, y = discount)) +
-  geom_boxplot(fill = "lightblue", color = "darkblue", outlier.color = "red", outlier.shape = 16) +
+  geom_boxplot(
+    fill = "lightblue",
+    color = "darkblue",
+    outlier.color = "red",
+    outlier.shape = 16
+  ) +
   labs(
     title = "Distribution of Discounts by Category",
     x = "Category",
     y = "Discount (%)"
-  ) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  ) 
 
 ```
 
 ## Discussion for Plot 2
 
-The boxplot highlights how discounts vary across different product categories. Categories with wider interquartile ranges or extreme
-outliers could be investigated further to understand pricing strategies. This analysis directly informs feature selection and category-specific strategies for modeling the relationship between features.
+The boxplot highlights how discounts vary across different product
+categories. Categories with wider interquartile ranges or extreme
+outliers could be investigated further to understand pricing strategies.
+This analysis directly informs feature selection and category-specific
+strategies for modeling the relationship between features.
 
 ## Model Plot 1 and 2
 
 ```{r}
 
 set.seed(123)
-df <- tibble(
-split = c("train", "train", "test", "train", "test"),
-category = c("A", "B", "A", "C", "B"),
-price = c(10, 20, 15, 25, 30),
-sales = c(100, 150, 120, 130, 140),
-discount = c(0.1, 0.2, 0.15, 0.3, 0.25),
-rank = c(3, 1, 2, 4, 5)  )
-train_data <- df %>% filter(split == "train")
+data_split <- initial_split(cleaned_appliances, prop = 0.8)
+train_data <- training(data_split)
+test_data <- testing(data_split)
+
 
 # Model Plot 1: Relationship between rank,prices and sales
 
-plot1 <- ggplot(train_data, aes(x = price, y = sales, color = rank)) + 
-geom_point(alpha = 0.6) + 
-theme_minimal() + 
-labs(title = "Model Plot 1: Rank vs Price and Sales", x = "Price", y = "Sales", color = "Rank") +
-scale_color_gradient(low = "blue", high = "red")  
+plot1 <- ggplot(train_data, aes(x = discount, y = "goods-title-link--jump", color = price)) + 
+  geom_point(alpha = 0.6) + 
+  theme_minimal() + 
+  labs(title = "Model Plot 1: Goods title vs Price and discount", x = "Price", y = "Goods Title", color = "price") +
+  scale_color_gradient(low = "blue", high = "red") 
 
 plot1
 
 # Model Plot 2: relationship between rank,discount and category
 
-plot2 <- ggplot(train_data, aes(x = discount, y = rank, fill = category)) + 
-geom_bar(stat = "identity", position = "dodge", alpha = 0.6) + 
-theme_minimal() + 
-labs(title = "Model Plot 2: Rank vs Discount and Category", x = "Discount", y = "Rank", fill = "Category")
-
+plot2 <- ggplot(train_data, aes(x = discount, y = rank, fill = "goods-title-link--jump")) + 
+  geom_bar(stat = "identity", position = "dodge", alpha = 0.6) + 
+  theme_minimal() + 
+  labs(title = "Model Plot 2: Rank vs Discount and Goods title", x = "Discount", y = "Rank", fill = "goods-title-link--jump")
 plot2
 
 
 ```
+## Plot 1 and 2 Explanation
+
+Plot 1 appears to be a bar chart showing the distribution of item ranks across different price points, potentially faceted or colored by discount level (although the legend is cut off in the image).  Each bar represents a price range, and the height indicates the number of items within that price range and rank. This plot helps assess whether higher-priced items consistently rank higher or if there's a more complex relationship influenced by discounts.
+
+Plot 2 seems to be a similar bar chart, possibly a heatmap, showing the relationship between item rank and discount, likely further broken down by the goods-title-link--jump variable (which represents different product categories or types). The color gradient likely indicates the frequency or density of items within specific rank and discount combinations.  This plot shows how discounts affect the rank of different product types.  It helps analyze if discounts uniformly boost ranks for all product types or if the impact varies by category.
+
 
 ## Exploratory Linear Model 1
 
@@ -160,8 +199,15 @@ rmse1
 
 ## Reasoning for Exploratory Model 1
 
-In earlier plots the relationship between price and discounts can be seen. With the first exploratory linear model, we expand on the
-relationship between price and discounts, and how it can impact a product's rank. These were some of the key findings: the model achieved an RMSE value of 7.78, the coefficients for price & discount were not statistically significant as p \> 0.05, residuals showed variability, and the adjusted r-squared value was negative. These results suggest the interaction model may be bit more complex for the data set, as the results don't improve prediction accuracy.
+In earlier plots the relationship between price and discounts can be
+seen. With the first exploratory linear model, we expand on the
+relationship between price and discounts, and how it can impact a
+product's rank. These were some of the key findings: the model achieved
+an RMSE value of 7.78, the coefficients for price & discount were not
+statistically significant as p \> 0.05, residuals showed variability,
+and the adjusted r-squared value was negative. These results suggest the
+interaction model may be bit more complex for the data set, as the
+results don't improve prediction accuracy.
 
 ## Exploratory Linear Model 2
 
@@ -188,11 +234,13 @@ rmse2
 
 ## Reasoning for Exploratory Linear Model 2
 
-The second exploratory linear model brings in a simpler additive approach, taking a closer look at the independent effects of price and
-discount on product rank. This model achieves an RMSE value of 2.67 which outperforms the interaction model. While the coefficients for both predictors are not statistically significant (p \> 0.05), the model supports predictive accuracy within the data set and suggests less variability. The results also suggest that neither price nor discount strongly predict ranking within the data set, including additional predictors within the final linear model can improve its explanatory power and statistical significance.
-
-
-
-
-
-
+The second exploratory linear model brings in a simpler additive
+approach, taking a closer look at the independent effects of price and
+discount on product rank. This model achieves a RMSE value of 2.67 which
+outperforms the interaction model. While the coefficients for both
+predictors are not statistically significant (p \> 0.05), the model
+supports predictive accuracy within the data set, and suggests less
+variability. The results also suggests that neither price nor discount
+strongly predict ranking within the data set, including additional
+predictors within the final linear model can improve its explanatory
+power and statistical significance.
