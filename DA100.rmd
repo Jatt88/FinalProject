@@ -14,7 +14,6 @@ List your group members, including their student numbers, here:
 -   Helen Zhang (169062556)
 -   Luka Zubac (169099010)
 -   Nav Bhatia (210559830)
--   Max Boudreau (169089815)
 
 ## load data and libraries
 
@@ -25,7 +24,8 @@ theme_set(theme_bw())
 library(arrow)
 library(tidymodels)
 tidymodels_prefer()
-library(ggplot2)
+library(dplyr)
+library(conflicted)
 ```
 
 ```{r}
@@ -109,6 +109,7 @@ higher-priced items might receive smaller discounts, potentially
 relevant for setting discount strategies in higher-priced segments.
 
 ## Exploratory Plot 2
+
 ```{r}
 colnames(cleaned_appliances)
 head(cleaned_appliances)
@@ -116,7 +117,7 @@ head(cleaned_appliances)
 
 ```{r}
 # Boxplot of Discount by Category
-ggplot(cleaned_appliances, aes(x = category, y = discount)) +
+ggplot(cleaned_appliances, aes(x ="goods-title-link--jump", y = discount)) +
   geom_boxplot(
     fill = "lightblue",
     color = "darkblue",
@@ -127,7 +128,8 @@ ggplot(cleaned_appliances, aes(x = category, y = discount)) +
     title = "Distribution of Discounts by Category",
     x = "Category",
     y = "Discount (%)"
-  ) 
+  ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ```
 
@@ -169,12 +171,25 @@ plot2
 
 
 ```
+
 ## Plot 1 and 2 Explanation
 
-Plot 1 appears to be a bar chart showing the distribution of item ranks across different price points, potentially faceted or colored by discount level (although the legend is cut off in the image).  Each bar represents a price range, and the height indicates the number of items within that price range and rank. This plot helps assess whether higher-priced items consistently rank higher or if there's a more complex relationship influenced by discounts.
+Plot 1 appears to be a bar chart showing the distribution of item ranks
+across different price points, potentially faceted or colored by
+discount level (although the legend is cut off in the image). Each bar
+represents a price range, and the height indicates the number of items
+within that price range and rank. This plot helps assess whether
+higher-priced items consistently rank higher or if there's a more
+complex relationship influenced by discounts.
 
-Plot 2 seems to be a similar bar chart, possibly a heatmap, showing the relationship between item rank and discount, likely further broken down by the goods-title-link--jump variable (which represents different product categories or types). The color gradient likely indicates the frequency or density of items within specific rank and discount combinations.  This plot shows how discounts affect the rank of different product types.  It helps analyze if discounts uniformly boost ranks for all product types or if the impact varies by category.
-
+Plot 2 seems to be a similar bar chart, possibly a heatmap, showing the
+relationship between item rank and discount, likely further broken down
+by the goods-title-link--jump variable (which represents different
+product categories or types). The color gradient likely indicates the
+frequency or density of items within specific rank and discount
+combinations. This plot shows how discounts affect the rank of different
+product types. It helps analyze if discounts uniformly boost ranks for
+all product types or if the impact varies by category.
 
 ## Exploratory Linear Model 1
 
@@ -188,7 +203,7 @@ summary(model_1)
 
 # Validation Data & RMSE calculation
 
-validation_data <- df|>
+validation_data <- df |>
   filter(split == "test")
 
 predictions <- predict(model_1, newdata = validation_data)
@@ -223,6 +238,8 @@ summary(model_2)
 
 # Validation Data & RMSE calculation
 
+df <- as_tibble(df)
+
 validation_data <- df|>
   filter(split == "test")
 
@@ -244,3 +261,143 @@ variability. The results also suggests that neither price nor discount
 strongly predict ranking within the data set, including additional
 predictors within the final linear model can improve its explanatory
 power and statistical significance.
+
+## Final Linear Model Diagnostic
+
+```{r}
+# Final Linear Model
+
+train_validation_data <- cleaned_appliances |>
+  filter(!is.na(rank))
+
+test_data <- df |> 
+  filter(split == "test")
+
+final_model <- lm(rank ~ price + discount, data = train_validation_data)
+final_test_predictions <- predict(final_model, newdata = test_data)
+final_rmse <- sqrt(mean((final_test_predictions - test_data$rank)^2, na.rm = TRUE))
+
+cat("Final Model Summary:\n")
+summary(final_model)
+
+cat("\nTest Set RMSE:\n")
+final_rmse
+
+# Exploring relationship through different model
+
+library(randomForest)
+
+rf_model <- randomForest(rank ~ price + discount, data = train_validation_data)
+rf_test_predictions <- predict(rf_model, newdata = test_data)
+rf_rmse <- sqrt(mean((rf_test_predictions - test_data$rank)^2, na.rm = TRUE))
+
+cat("RF Model Summary:\n")
+summary(rf_model)
+
+cat("Random Forest Test Set RMSE: ")
+rf_rmse
+#summary(final_rmse)
+```
+
+## Final Linear Model Interpretation
+
+The final linear model output closely mirrors the results from the
+earlier exploratory linear analysis. This similarity strengthens our
+hypothesis suggesting that our initial understanding aligns with the
+model's findings. Alternatively for a more precise and advanced
+interpretation, it would be beneficial to explore alternative models
+such as decision tree and the random forest model shown above, which
+help in capture non-linear relationships, that may not be fully
+represented in a linear model.
+
+## Conclusion
+
+The analysis aimed to discuss whether the discount percentage affects
+the ranking on Shein’s appliance best seller’s list. While the initial
+exploratory model indicates some potential influences between ranking
+and discount percentage, the final linear model shows the goods’
+categories may play a more significant role in rank. Despite this,
+neither price nor discount alone has a strong, statistically significant
+impact on rank. This suggests that while discounts may have some effect,
+other factors, such as product category, customer reviews, or seasonal
+trends, likely have a more substantial influence on product rankings.
+Optimizing pricing and discount strategies may still be useful, but a
+more comprehensive approach that considers multiple factors would likely
+provide a more effective model for predicting sales performance.
+
+## Limitations
+
+The analysis has several limitations that should be considered when
+interpreting the result. One major limitation is the dataset’s focus on
+price, discount and product category, which leaves out other potential
+variables that could significantly influence ranking, such as
+customers’s reviews, brand recognition and stock levels. This
+simplification of the model to only include price and discount as
+predictor may overlook more complex interactions within the data.
+Furthermore, the absence of temporal data ( such as seasonality or
+promotional events) limits the models’ ability to account for time-based
+trends, which could significantly affect product ranking. Lastly, the
+discount and rank may not be as strong as initially hypothesized, and
+additional data and variables may be necessary for more accurate
+predictions.
+
+## References
+
+Measurable AI. (2024, September 20). The psychology of discounts: Temu
+vs Shein vs Shopee vs Lazada vs TikTok Shop. Measurable.ai.
+<https://blog.measurable.ai/2024/09/20/the-psychology-of-discounts-temu-vs-shein-vs-shopee-vs-lazada-tiktok-shop/>
+
+The article discusses the psychological impact of discounts on consumer
+behavior, comparing platforms like Shein, which relates to your research
+on how discounts affect product rankings. Understanding this
+relationship can help refine strategies for optimizing pricing and
+boosting sales performance.
+
+eCommerceDB. (2024, September 20). Shein business strategy, growth, and
+competition. Retrieved from
+<https://ecommercedb.com/insights/shein-business-strategy-growth-competition/4708>
+
+This article examines Shein's growth strategy and competition, which can
+offer valuable insights into how pricing and discount strategies
+influence brand success, potentially affecting product rankings.
+Understanding Shein's business approach can help optimize pricing models
+in your analysis of discounts and rankings.
+
+TwoOrbits. (2024, September 15). Marketing strategy of Shein exposed.
+Retrieved from
+<https://twoorbits.com/digital-marketing/marketing-strategy-of-shein-exposed/>
+
+This article highlights Shein's marketing tactics, including pricing and
+discount strategies, which are critical for understanding how these
+factors can influence product rankings. By examining Shein's approach,
+your analysis can gain insights into the broader competitive landscape
+and how discounting affects consumer purchasing decisions, potentially
+impacting product rank.
+
+CBRE. (2023, October 20). Omnichannel: How does e-commerce vary by
+product category? Retrieved from
+<https://www.cbre.com/insights/articles/omnichannel-how-does-e-commerce-vary-by-product-category>
+
+This article explores how e-commerce strategies differ across product
+categories, which can help in understanding how discounts might affect
+rankings on Shein's appliance category. It provides valuable insights
+into how consumer behavior and category-specific marketing strategies
+can influence sales and ranking outcomes in your analysis.
+
+Zhang, Y. (2023). The rise of SHEIN: Navigating the digital era of fast
+fashion and its comprehensive impacts. ResearchGate.
+<https://www.researchgate.net/publication/379918500_The_Rise_of_SHEIN_Navigating_the_Digital_Era_of_Fast_Fashion_and_Its_Comprehensive_Impacts>
+
+This article provides an analysis of SHEIN's success in the digital era,
+focusing on its marketing strategies, fast-fashion model, and global
+reach. It offers insights into how SHEIN has become a dominant player in
+e-commerce, which can help explain the factors influencing product
+rankings on its platform, including pricing and discount strategies. The
+findings can support your analysis of how discounts might affect Shein's
+appliance category rankings.
+
+Sari, R. A., & Asmara, D. T. (2020). The effect of discounts on consumer
+buying interest in e-commerce: Study on consumers who buy discounted
+products on e-commerce Tokopedia. International Journal of Advanced
+Engineering and Management, 3(3), 1-9.
+<https://ijaem.net/issue_dcp/The%20Effect%20of%20Discounts%20on%20Consumer%20Buying%20Interest%20in%20E%20Commerce;%20Study%20on%20consumers%20who%20buy%20discounted%20products%20on%20E%20commerce%20Tokopedia.pdf>
